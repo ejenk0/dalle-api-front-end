@@ -1,7 +1,53 @@
+import classNames from "classnames";
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
+import OpenAI from "openai";
+import { useRef, useState } from "react";
 
 export default function Home() {
+  const apiKeyRef = useRef<HTMLInputElement>(null);
+  const promptRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState<string | null>(null);
+
+  const handleSubmit = () => {
+    if (loading) return;
+    setLoading(true);
+    const apiKey = apiKeyRef.current?.value;
+    const prompt = promptRef.current?.value;
+
+    if (!apiKey || !prompt) {
+      return;
+    }
+
+    const openai = new OpenAI({
+      apiKey,
+      dangerouslyAllowBrowser: true,
+    });
+
+    openai.images
+      .generate({
+        prompt,
+        model: "dall-e-3",
+      })
+      .then((res) => {
+        if (res.data.length > 0 && res.data[0]?.url) {
+          console.log("Image generated", res.data[0].url);
+          setImage(res.data[0].url);
+          // hard redirect user to the image in a new tab
+          window.open(res.data[0].url, "_blank");
+        } else {
+          console.error("No image found in response", res);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error generating image", err);
+        setLoading(false);
+      });
+  };
+
   return (
     <>
       <Head>
@@ -12,31 +58,58 @@ export default function Home() {
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
+            <span className="text-[hsl(280,100%,70%)]">DALL-E</span> API
           </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
+          <div className="text-3xl font-bold tracking-tight text-white sm:text-[3rem]">
+            Front-end by Evyn Jenkins
+          </div>
+          <div className="flex flex-col gap-4 text-black">
+            <div className="rounded-md bg-gradient-to-b from-white to-slate-100 p-3">
+              <label>API Key</label>
+              <input
+                type="text"
+                className="w-full rounded-md border bg-white p-2 text-black"
+                placeholder="API Key..."
+                ref={apiKeyRef}
+              />
+            </div>
+            <div className="rounded-md bg-gradient-to-b from-white to-slate-100 p-3">
+              <label>Prompt</label>
+              <input
+                type="text"
+                className="w-full rounded-md border bg-white p-2 text-black"
+                placeholder="Prompt..."
+                ref={promptRef}
+              />
+            </div>
+            <button
+              disabled={loading}
+              className="rounded-md bg-gradient-to-b from-white to-slate-100 px-4 py-2 text-black transition-all duration-300 hover:from-cyan-300 hover:to-cyan-400"
+              onClick={handleSubmit}
             >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
+              Submit
+            </button>
+          </div>
+          <div>
+            {loading && <div className="italic text-white">Loading...</div>}
+            {image && (
+              <a
+                href={image}
+                target="_blank"
+                rel="noreferrer"
+                className="animate-pulse rounded-full bg-gradient-to-b from-white to-slate-100 p-3 text-black transition-all duration-300 hover:from-cyan-300 hover:to-cyan-400"
+              >
+                Go to image
+              </a>
+            )}
+            {/* {image && (
+              <Image
+                alt={"Generated DALL-E image"}
+                src={image}
+                width={500}
+                height={500}
+              />
+            )} */}
           </div>
         </div>
       </main>
