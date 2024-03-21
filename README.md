@@ -30,7 +30,7 @@ This is a basic **front-end** to OpenAI's **DALLE-E** image generation model API
 
 ## Tech stack
 
-This project was created with the [T3](https://create.t3.gg) stack. I highly reccomend it for rapid development and scalability. The first working draft of this app was built and published in under 40 minutes.
+This project was created with the [T3](https://create.t3.gg) stack. I highly reccommend it for rapid development and scalability. The first working draft of this app was built and published in under 40 minutes.
 
 - [bun](https://bun.sh)
   - Just better than Node.js in every way.
