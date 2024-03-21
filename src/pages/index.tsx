@@ -1,15 +1,26 @@
-import classNames from "classnames";
 import Head from "next/head";
-import Image from "next/image";
-import Link from "next/link";
 import OpenAI from "openai";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Home() {
   const apiKeyRef = useRef<HTMLInputElement>(null);
   const promptRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!apiKeyRef.current) return;
+
+    const apiKey = localStorage.getItem("openai-api-key");
+    if (apiKey) {
+      apiKeyRef.current.value = apiKey;
+    }
+  }, [apiKeyRef]);
+
+  const onApiKeyChange = (value: string) => {
+    localStorage.setItem("openai-api-key", value);
+    updateCanSubmit();
+  };
 
   const handleSubmit = () => {
     if (loading) return;
@@ -21,32 +32,26 @@ export default function Home() {
       return;
     }
 
-    const openai = new OpenAI({
-      apiKey,
-      dangerouslyAllowBrowser: true,
-    });
-
-    openai.images
-      .generate({
-        prompt,
-        model: "dall-e-3",
-      })
-      .then((res) => {
-        if (res.data.length > 0 && res.data[0]?.url) {
-          console.log("Image generated", res.data[0].url);
-          setImage(res.data[0].url);
-          // hard redirect user to the image in a new tab
-          window.open(res.data[0].url, "_blank");
-        } else {
-          console.error("No image found in response", res);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error generating image", err);
-        setLoading(false);
-      });
+    generateImage(apiKey, prompt, setImage, setLoading);
   };
+
+  const [canSubmit, setCanSubmit] = useState(false);
+  const updateCanSubmit = useCallback(() => {
+    const can =
+      !loading &&
+      apiKeyRef.current !== null &&
+      promptRef.current !== null &&
+      apiKeyRef.current.value.length > 0 &&
+      promptRef.current.value.length > 0;
+
+    console.log("Can:", can);
+
+    if (can !== canSubmit) setCanSubmit(can);
+  }, [loading, canSubmit]);
+
+  useEffect(() => {
+    updateCanSubmit();
+  }, [loading, updateCanSubmit]);
 
   return (
     <>
@@ -63,7 +68,12 @@ export default function Home() {
           <div className="text-3xl font-bold tracking-tight text-white sm:text-[3rem]">
             Front-end by Evyn Jenkins
           </div>
-          <div className="flex flex-col gap-4 text-black">
+          <form
+            className="flex flex-col gap-4 text-black"
+            onSubmit={(e) => {
+              e.preventDefault();
+            }}
+          >
             <div className="rounded-md bg-gradient-to-b from-white to-slate-100 p-3">
               <label>API Key</label>
               <input
@@ -71,6 +81,7 @@ export default function Home() {
                 className="w-full rounded-md border bg-white p-2 text-black"
                 placeholder="API Key..."
                 ref={apiKeyRef}
+                onChange={(e) => onApiKeyChange(e.target.value)}
               />
             </div>
             <div className="rounded-md bg-gradient-to-b from-white to-slate-100 p-3">
@@ -80,16 +91,18 @@ export default function Home() {
                 className="w-full rounded-md border bg-white p-2 text-black"
                 placeholder="Prompt..."
                 ref={promptRef}
+                onChange={updateCanSubmit}
               />
             </div>
             <button
-              disabled={loading}
-              className="rounded-md bg-gradient-to-b from-white to-slate-100 px-4 py-2 text-black transition-all duration-300 hover:from-cyan-300 hover:to-cyan-400"
+              disabled={!canSubmit}
+              className="rounded-md bg-gradient-to-b from-white to-slate-100 px-4 py-2 text-black transition-all duration-300 hover:from-cyan-300 hover:to-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={handleSubmit}
+              type="submit"
             >
               Submit
             </button>
-          </div>
+          </form>
           <div>
             {loading && <div className="italic text-white">Loading...</div>}
             {image && (
@@ -115,4 +128,36 @@ export default function Home() {
       </main>
     </>
   );
+}
+function generateImage(
+  apiKey: string,
+  prompt: string,
+  setImage: (imageUrl: string) => void,
+  setLoading: (isLoading: boolean) => void,
+) {
+  const openai = new OpenAI({
+    apiKey,
+    dangerouslyAllowBrowser: true,
+  });
+
+  openai.images
+    .generate({
+      prompt,
+      model: "dall-e-3",
+    })
+    .then((res) => {
+      if (res.data.length > 0 && res.data[0]?.url) {
+        console.log("Image generated", res.data[0].url);
+        setImage(res.data[0].url);
+        // hard redirect user to the image in a new tab
+        window.open(res.data[0].url, "_blank");
+      } else {
+        console.error("No image found in response", res);
+      }
+      setLoading(false);
+    })
+    .catch((err) => {
+      console.error("Error generating image", err);
+      setLoading(false);
+    });
 }
