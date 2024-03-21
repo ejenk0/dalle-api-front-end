@@ -27,3 +27,18 @@ This is a basic **front-end** to OpenAI's **DALLE-E** image generation model API
 - Sora video generation support when the API is released.
 - Language model support (maybe). Use ChatGPT through the API for cheaper and faster results without the bloat of the offical chat site.
 - Audio transcription model support?
+
+## Tech stack
+
+This project was created with the [T3](https://create.t3.gg) stack. I highly reccomend it for rapid development and scalability. The first working draft of this app was built and published in under 40 minutes.
+
+- [bun](https://bun.sh)
+  - Just better than Node.js in every way.
+- [Next.js](https://nextjs.org)
+  - The best React based framework.
+- [tailwindcss](https://tailwindcss.com)
+  - My only way to cope with CSS. Develop so much faster with this, must have in every project.
+- [Vercel](https://vercel.com)
+  - Take the pain out of publishing. Made by the Next.js team so it works together flawlessly.
+
+That's it really. Enjoy!
