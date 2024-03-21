@@ -1,29 +1,29 @@
-# Create T3 App
+# DALL-E Simple Front End
 
-This is a [T3 Stack](https://create.t3.gg/) project bootstrapped with `create-t3-app`.
+This is a basic **front-end** to OpenAI's **DALLE-E** image generation model API. It keeps track of your recently generated images so you don't lose your masterpieces. 🐻💻
 
-## What's next? How do I make an app with this?
+## How to
 
-We try to keep this project as simple as possible, so you can start with just the scaffolding we set up for you, and add additional things later when they become necessary.
+- Create an OpenAI account, create an API key and add a payment method and some funds.
+  - There is a pretty good guide on how to do this [here](https://www.maisieai.com/help/how-to-get-an-openai-api-key-for-chatgpt) if you are lost.
+- Go to [evyn.info](evyn.info).
+- Paste your API key in. (You only have to do this once, it will be saved in your browser's local storage)
+- Type your prompt and generate!
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+## Features
 
-- [Next.js](https://nextjs.org)
-- [NextAuth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [Drizzle](https://orm.drizzle.team)
-- [Tailwind CSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io)
+- See your image generation history.
+- Fully client-side. Your API key and generated images **never leave the local storage** of your browser.
+- Cheaper than a ChatGPT Plus subscription!
 
-## Learn More
+## Why
 
-To learn more about the [T3 Stack](https://create.t3.gg/), take a look at the following resources:
+- Bypass the slow and overloaded ChatGPT website.
+- [4c (USD)](https://openai.com/pricing#image-models) per Standard, 1024x1024 image generated. If you generate less than 500 images per month, this is much cheaper than a full ChatGPT Plus subscription
 
-- [Documentation](https://create.t3.gg/)
-- [Learn the T3 Stack](https://create.t3.gg/en/faq#what-learning-resources-are-currently-available) — Check out these awesome tutorials
+## Coming soon
 
-You can check out the [create-t3-app GitHub repository](https://github.com/t3-oss/create-t3-app) — your feedback and contributions are welcome!
-
-## How do I deploy this?
-
-Follow our deployment guides for [Vercel](https://create.t3.gg/en/deployment/vercel), [Netlify](https://create.t3.gg/en/deployment/netlify) and [Docker](https://create.t3.gg/en/deployment/docker) for more information.
+- Select which DALL-E model and resolution to generate with. Draft prompts cheaply before generating with the real deal.
+- Sora video generation support when the API is released.
+- Language model support (maybe). Use ChatGPT through the API for cheaper and faster results without the bloat of the offical chat site.
+- Audio transcription model support?
