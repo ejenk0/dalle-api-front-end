@@ -6,7 +6,7 @@ This is a basic **front-end** to OpenAI's **DALLE-E** image generation model API
 
 - Create an OpenAI account, create an API key and add a payment method and some funds.
   - There is a pretty good guide on how to do this [here](https://www.maisieai.com/help/how-to-get-an-openai-api-key-for-chatgpt) if you are lost.
-- Go to [evyn.info](evyn.info).
+- Go to [dalle.evyn.info](dalle.evyn.info).
 - Paste your API key in. (You only have to do this once, it will be saved in your browser's local storage)
 - Type your prompt and generate!
 
