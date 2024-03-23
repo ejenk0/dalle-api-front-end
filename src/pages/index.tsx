@@ -126,7 +126,18 @@ export default function Home() {
         <title>DALL-E</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] pb-10">
+      <main className="relative flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] pb-10">
+        <a
+          className="absolute right-0 top-0 ml-auto p-2"
+          href="https://github.com/ejenk0/gpt-api-fe"
+        >
+          <Image
+            src="/github-mark-white.svg"
+            alt="Github"
+            width={30}
+            height={30}
+          />
+        </a>
         <div className="container flex flex-col items-center justify-center gap-6 px-4 py-16">
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
             <span className="text-[hsl(280,100%,70%)]">DALL-E</span> API
