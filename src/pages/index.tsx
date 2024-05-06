@@ -7,43 +7,15 @@ import Image from "next/image";
 import OpenAI from "openai";
 import { type OpenAIError } from "openai/error.mjs";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { get as idbGet, set as idbSet } from "idb-keyval";
+import defaultImagesRaw from "public/defaultImages.json";
 
 type GeneratedImage = {
   id: string; // UUID
-  imageUrl: string;
+  imageData: string;
   originalPrompt: string;
   revisedPrompt: string;
 };
-
-const defaultImages = [
-  {
-    id: crypto.randomUUID(),
-    imageUrl:
-      "https://oaidalleapiprodscus.blob.core.windows.net/private/org-zWJEyLu9IbaYjWOr0IlZSf2O/user-W9BErYk8conN6sInGJ7Ncvai/img-eqNw0e4lNKTqrkGs9jMUqSjR.png?st=2024-03-27T12%3A05%3A51Z&se=2024-03-27T14%3A05%3A51Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/png&skoid=6aaadede-4fb3-4698-a8f6-684d7786b067&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-03-26T21%3A02%3A26Z&ske=2024-03-27T21%3A02%3A26Z&sks=b&skv=2021-08-06&sig=%2BAcFrV8LTrPSos5bSsJp6Tcfh8q4IlDBf%2BsIAlFcH6A%3D",
-    originalPrompt:
-      "A detailed close-up image of a classic Vincent Rapide motorcycle in a majestic British country side. It is imperative that the details of the Vincent Rapide are accurate to the real life classic bike.",
-    revisedPrompt:
-      "Create a close-up detailed image of a classic Vincent Rapide motorcycle, positioned in the grandeur of the British countryside. The motorcycle maintains its historical aesthetics with chrome accents, spoked wheels, a large round headlamp, and the iconic gas tank. The surrounding environment is filled with typical British countryside elements like rolling green hills, scattered sheep, and a backdrop of distant, misty mountains. The scene is during daylight with soft rays of sun, adding a touch of glow to the landscape and the motorcycle.",
-  },
-  {
-    id: crypto.randomUUID(),
-    imageUrl:
-      "https://oaidalleapiprodscus.blob.core.windows.net/private/org-zWJEyLu9IbaYjWOr0IlZSf2O/user-W9BErYk8conN6sInGJ7Ncvai/img-Oe7SYvap60vo2gXyXr2D6Gqm.png?st=2024-03-27T12%3A28%3A23Z&se=2024-03-27T14%3A28%3A23Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/png&skoid=6aaadede-4fb3-4698-a8f6-684d7786b067&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-03-26T21%3A03%3A36Z&ske=2024-03-27T21%3A03%3A36Z&sks=b&skv=2021-08-06&sig=ZaWN0wKKF9hzmpEubo/xscCWYuHvUzb1bvqsB9qXAtY%3D",
-    originalPrompt:
-      "A joyful looking Canadian bear generating fun images using an AI",
-    revisedPrompt:
-      "An exuberant, Canadian bear with a joyous expression on its face. It's sitting in front of a large computer screen, engrossed in the task of creating delightful and fun images with the use of artificial intelligence technology. The bear's fur is thick and lush, indicative of its excellent health and vivaciousness. The backdrop showcases a serene Canadian forest with verdant evergreens peppering the landscape. The sunlight peeping in through the trees adds a beautiful, warm glow to the scene. The computer the bear is using is modern and sleek, further emphasizing its dedication to its exciting project.",
-  },
-  {
-    id: crypto.randomUUID(),
-    imageUrl:
-      "https://oaidalleapiprodscus.blob.core.windows.net/private/org-zWJEyLu9IbaYjWOr0IlZSf2O/user-W9BErYk8conN6sInGJ7Ncvai/img-ZwOn0HBoWB2uY2hca3aQZ5Op.png?st=2024-03-27T12%3A30%3A45Z&se=2024-03-27T14%3A30%3A45Z&sp=r&sv=2021-08-06&sr=b&rscd=inline&rsct=image/png&skoid=6aaadede-4fb3-4698-a8f6-684d7786b067&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-03-27T13%3A21%3A35Z&ske=2024-03-28T13%3A21%3A35Z&sks=b&skv=2021-08-06&sig=Ye6xGlEXb10O0ooQbWX%2BZJAvO9tRjJT43aem6Wl57dY%3D",
-    originalPrompt:
-      "A jaw-droppingly stunning birds-eye-view of a fantasy valley filled with trees, rivers, lakes, a village, mystical creatures and a dragon flying overhead in the distance. Stormy cloudy weather to the right and clear skies to the left.",
-    revisedPrompt:
-      "Imagine an extraordinary top-down view of a fantastical valley. This valley is bursting with life, embodied in its dense forest, meandering rivers, and sparkling lakes. A quaint village can be seen nestled amidst this nature, inhabited by mythical beings. In the skies, yet maintaining a safe distance, a dragon can be seen soaring with grace. The weather is an intriguing mix, with tumultuous clouds gathering to the right hinting at a storm, while the left reveals pristine clear blue skies. This juxtaposition of climates further adds to the mystery and allure of this scene.",
-  },
-] as GeneratedImage[];
 
 export default function Home() {
   const apiKeyRef = useRef<HTMLInputElement>(null);
@@ -72,8 +44,13 @@ export default function Home() {
   };
 
   const setImages = (newImages: GeneratedImage[]) => {
-    _setImages(newImages);
-    localStorage.setItem("generated-images", JSON.stringify(newImages));
+    idbSet("generated-images", newImages)
+      .then(() => {
+        _setImages(newImages);
+      })
+      .catch((err) => {
+        console.error("Failed to set images in IndexedDB", err);
+      });
   };
 
   const handleImageLoaded = () => {
@@ -81,75 +58,30 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const storedImagesRaw = localStorage.getItem("generated-images");
+    void (async () => {
+      const storedImages: GeneratedImage[] | undefined =
+        await idbGet("generated-images");
 
-    // First visit, set empty array
-    if (!storedImagesRaw) {
-      console.log("blah");
-      setFailureMessage(
-        "Welcome! This is your first visit, so I've added some example images for you to get started. All your generated images will be stored here in your browser for you to come back to later. Enjoy! :)",
-      );
-      setImages(defaultImages);
-      return;
-    }
+      // First visit, set empty array
+      if (!storedImages) {
+        if (localStorage.getItem("generated-images")) {
+          setFailureMessage(
+            "Welcome back! Your previously generated images have expired, but you can generate new ones now and they will persist in your browser until you clear your IndexedDB. I have also added some example images for you to get started. Enjoy! :)",
+          );
+          localStorage.removeItem("generated-images");
+        } else {
+          setFailureMessage(
+            "Welcome! This is your first visit, so I've added some example images for you to get started. All your generated images will be stored here in your browser for you to come back to later. Enjoy! :)",
+          );
+        }
 
-    try {
-      const storedImages = JSON.parse(storedImagesRaw ?? "[]") as
-        | GeneratedImage[]
-        | string[];
-      if (storedImages.length === 0) {
+        setImages(defaultImagesRaw as GeneratedImage[]);
+
         return;
       }
-      if (storedImages.every((url) => typeof url === "string")) {
-        setFailureMessage(
-          "Your stored images were in an old format. They have been converted to the new format, but some information may be missing. I've also added on some example images. Welcome back! :)",
-        );
-        console.warn(
-          "Old image format detected. Filling empty properties with defaults.",
-        );
-        const newImages = storedImages.map((url) => ({
-          id: crypto.randomUUID(),
-          imageUrl: url as string, // Cast imageUrl to string
-          originalPrompt:
-            "Image generated with old format, no prompt available.",
-          revisedPrompt:
-            "Image generated with old format, no revised prompt available.",
-        }));
-        setImages([...newImages, ...defaultImages]);
-        return;
-      }
-      if (storedImages.every((img) => typeof img === "object")) {
-        setImages(storedImages as GeneratedImage[]);
-        return;
-      }
-      // If we reach here, the stored images are malformed
-      setFailureMessage(
-        "Your stored images were malformed. They have been replaced with the default images. Your old data has been saved to a recovery entry in your browser's local storage. Contact the developer for help recovering your data.",
-      );
-      console.warn(
-        "Stored images were malformed. Replacing with default images. Old data saved to recovery entry.",
-      );
-      setImages(defaultImages);
-      localStorage.setItem(
-        "generated-images-recovery-" + Date.now(),
-        storedImagesRaw,
-      );
-    } catch (e) {
-      if (e instanceof SyntaxError) {
-        setFailureMessage(
-          "Your stored images were malformed. They have been replaced with the default images. Your old data has been saved to a recovery entry in your browser's local storage. Contact the developer for help recovering your data.",
-        );
-        console.warn(
-          "Stored images were malformed. Replacing with default images. Old data saved to recovery entry.",
-        );
-        setImages(defaultImages);
-        localStorage.setItem(
-          "generated-images-recovery-" + Date.now(),
-          storedImagesRaw,
-        );
-        return;
-      }
-    }
+
+      setImages(storedImages);
+    })();
   }, []);
 
   useEffect(() => {
@@ -226,10 +158,10 @@ export default function Home() {
           />
         </a>
         <a
-          className="fixed left-1 top-1 text-white opacity-60"
+          className="fixed left-2 top-1 text-white underline opacity-60"
           href="https://semver.org/spec/v2.0.0.html"
         >
-          v0.1.0
+          v1.0.0
         </a>
         <div className="container flex flex-col items-center justify-center gap-6 px-4 py-16">
           <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
@@ -281,18 +213,20 @@ export default function Home() {
           </form>
 
           {loading && <div className="italic text-white">Generating...</div>}
-          <a href={mainImage?.imageUrl ?? "#"} target="_blank" rel="noreferrer">
-            <Image
-              alt={"Generated DALL-E image"}
-              src={mainImage?.imageUrl ?? "/placeholder.png"}
-              width={700}
-              height={700}
-              ref={mainImageRef}
-              className={classNames({ "blur-md": !mainImage })}
-              onLoad={handleImageLoaded}
-              priority={true}
-            />
-          </a>
+          <Image
+            alt={"Generated DALL-E image"}
+            src={
+              mainImage?.imageData
+                ? `data:image/png;base64,${mainImage.imageData}`
+                : "/placeholder.png"
+            }
+            width={700}
+            height={700}
+            ref={mainImageRef}
+            className={classNames({ "blur-md": !mainImage })}
+            onLoad={handleImageLoaded}
+            priority={true}
+          />
           <Disclosure
             as="div"
             className={classNames(
@@ -350,7 +284,7 @@ export default function Home() {
             <div key={image.id} className="relative">
               <Image
                 className="ring-white transition-all duration-300 hover:cursor-pointer hover:rounded-sm hover:ring-1"
-                src={image.imageUrl}
+                src={`data:image/png;base64,${image.imageData}`}
                 alt={"A preview of a previously generated image."}
                 width={100}
                 height={100}
@@ -393,13 +327,14 @@ function generateImage(
     .generate({
       prompt,
       model: "dall-e-3",
+      response_format: "b64_json",
     })
     .then((res) => {
-      if (res.data.length > 0 && res.data[0]?.url) {
-        console.log("Image generated", res.data[0].url);
+      if (res.data.length > 0 && res.data[0]?.b64_json) {
+        console.log("Image generated", res.data[0].b64_json);
         onSuccess({
           id: crypto.randomUUID(),
-          imageUrl: res.data[0].url,
+          imageData: res.data[0].b64_json,
           originalPrompt: prompt,
           revisedPrompt: res.data[0].revised_prompt ?? prompt,
         });
